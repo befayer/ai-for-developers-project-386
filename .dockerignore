@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+dist
+dist-server
+tsp-output
+coverage
+data
+*.log
+.env
+

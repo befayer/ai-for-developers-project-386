@@ -1,0 +1,29 @@
+FROM node:24-bookworm-slim AS build
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
+COPY . .
+RUN npm run build
+
+FROM node:24-bookworm-slim AS runtime
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --legacy-peer-deps && npm cache clean --force
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/dist-server ./dist-server
+
+RUN mkdir -p /app/data && chown -R node:node /app
+USER node
+
+EXPOSE 3000
+CMD ["node", "dist-server/index.js"]
+
