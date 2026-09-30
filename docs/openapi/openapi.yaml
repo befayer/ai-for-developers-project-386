@@ -1,0 +1,271 @@
+openapi: 3.0.0
+info:
+  title: Call Calendar API
+  version: 0.0.0
+tags:
+  - name: Event types
+  - name: Slots
+  - name: Bookings
+  - name: System
+paths:
+  /api/v1/bookings:
+    get:
+      operationId: Bookings_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+      tags:
+        - Bookings
+    post:
+      operationId: Bookings_create
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+  /api/v1/event-types:
+    get:
+      operationId: EventTypes_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+      tags:
+        - Event types
+    post:
+      operationId: EventTypes_create
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Event types
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventTypeRequest'
+  /api/v1/event-types/{eventTypeId}/slots:
+    get:
+      operationId: Slots_list
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Slots
+  /api/v1/health:
+    get:
+      operationId: System_health
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ok
+                required:
+                  - status
+      tags:
+        - System
+components:
+  schemas:
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - NOT_FOUND
+            - SLOT_CONFLICT
+        message:
+          type: string
+    Booking:
+      type: object
+      required:
+        - id
+        - eventTypeId
+        - eventTitle
+        - startAt
+        - endAt
+        - guestName
+        - guestEmail
+        - createdAt
+      properties:
+        id:
+          type: string
+        eventTypeId:
+          type: string
+        eventTitle:
+          type: string
+        startAt:
+          $ref: '#/components/schemas/UtcDateTime'
+        endAt:
+          $ref: '#/components/schemas/UtcDateTime'
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/UtcDateTime'
+    CreateBookingRequest:
+      type: object
+      required:
+        - eventTypeId
+        - startAt
+        - guestName
+        - guestEmail
+      properties:
+        eventTypeId:
+          type: string
+        startAt:
+          $ref: '#/components/schemas/UtcDateTime'
+        guestName:
+          type: string
+          minLength: 2
+        guestEmail:
+          type: string
+          format: email
+    CreateEventTypeRequest:
+      type: object
+      required:
+        - title
+        - description
+        - durationMinutes
+      properties:
+        title:
+          type: string
+          minLength: 2
+        description:
+          type: string
+          minLength: 5
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 30
+          maximum: 120
+    EventType:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - durationMinutes
+        - createdAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 30
+        createdAt:
+          $ref: '#/components/schemas/UtcDateTime'
+    Slot:
+      type: object
+      required:
+        - startAt
+        - endAt
+      properties:
+        startAt:
+          $ref: '#/components/schemas/UtcDateTime'
+        endAt:
+          $ref: '#/components/schemas/UtcDateTime'
+    UtcDateTime:
+      type: string
+      format: date-time
+servers:
+  - url: http://localhost:3000
+    description: Local development
+    variables: {}

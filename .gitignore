@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-server/
+tsp-output/
+coverage/
+data/*.db
+data/*.db-*
+.env
+.DS_Store
+
