@@ -72,14 +72,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description Every 4xx response uses this shape.
+         *     VALIDATION_ERROR covers schema violations and malformed requests (invalid JSON, unsupported content type).
+         */
         ApiError: {
             /** @enum {string} */
             code: "VALIDATION_ERROR" | "NOT_FOUND" | "SLOT_CONFLICT";
             message: string;
         };
         Booking: {
-            id: string;
-            eventTypeId: string;
+            id: components["schemas"]["Uuid"];
+            eventTypeId: components["schemas"]["Uuid"];
             eventTitle: string;
             startAt: components["schemas"]["UtcDateTime"];
             endAt: components["schemas"]["UtcDateTime"];
@@ -87,25 +91,31 @@ export interface components {
             guestEmail: string;
             createdAt: components["schemas"]["UtcDateTime"];
         };
+        /** @description String fields are trimmed; length limits apply to the trimmed value. */
         CreateBookingRequest: {
-            eventTypeId: string;
+            eventTypeId: components["schemas"]["Uuid"];
+            /** @description Must equal the startAt of a slot returned by the slots endpoint; otherwise 409 SLOT_CONFLICT. */
             startAt: components["schemas"]["UtcDateTime"];
             guestName: string;
             /** Format: email */
             guestEmail: string;
         };
+        /** @description String fields are trimmed; length limits apply to the trimmed value. */
         CreateEventTypeRequest: {
             title: string;
             description: string;
-            /** Format: int32 */
-            durationMinutes: number;
+            durationMinutes: components["schemas"]["DurationMinutes"];
         };
+        /**
+         * @description Meeting length in minutes: 30–120, a multiple of 30.
+         * @enum {number}
+         */
+        DurationMinutes: 30 | 60 | 90 | 120;
         EventType: {
-            id: string;
+            id: components["schemas"]["Uuid"];
             title: string;
             description: string;
-            /** Format: int32 */
-            durationMinutes: number;
+            durationMinutes: components["schemas"]["DurationMinutes"];
             createdAt: components["schemas"]["UtcDateTime"];
         };
         Slot: {
@@ -114,6 +124,8 @@ export interface components {
         };
         /** Format: date-time */
         UtcDateTime: string;
+        /** Format: uuid */
+        Uuid: string;
     };
     responses: never;
     parameters: never;
@@ -250,6 +262,7 @@ export interface operations {
     Slots_list: {
         parameters: {
             query?: {
+                /** @description Booking window in days starting today; defaults to 14. */
                 days?: number;
             };
             header?: never;
@@ -267,6 +280,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Slot"][];
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description The server cannot find the requested resource. */

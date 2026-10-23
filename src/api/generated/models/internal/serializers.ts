@@ -3,6 +3,7 @@ import type {
   Booking,
   CreateBookingRequest,
   CreateEventTypeRequest,
+  DurationMinutes,
   EventType,
   Slot,
 } from "../models.js";
@@ -99,15 +100,27 @@ export function decodeBase64(value: string): Uint8Array | undefined {
     return input_ as any;
   }
     return {
-    id: input_.id,title: input_.title,description: input_.description,durationMinutes: input_.durationMinutes,createdAt: input_.createdAt
+    id: input_.id,title: input_.title,description: input_.description,durationMinutes: jsonDurationMinutesToTransportTransform(input_.durationMinutes),createdAt: input_.createdAt
   }!;
 }export function jsonEventTypeToApplicationTransform(input_?: any): EventType {
   if(!input_) {
     return input_ as any;
   }
     return {
-    id: input_.id,title: input_.title,description: input_.description,durationMinutes: input_.durationMinutes,createdAt: input_.createdAt
+    id: input_.id,title: input_.title,description: input_.description,durationMinutes: jsonDurationMinutesToApplicationTransform(input_.durationMinutes),createdAt: input_.createdAt
   }!;
+}export function jsonDurationMinutesToTransportTransform(
+  input_?: DurationMinutes | null,
+): any {
+  if(!input_) {
+    return input_ as any;
+  }return input_
+}export function jsonDurationMinutesToApplicationTransform(
+  input_?: any,
+): DurationMinutes {
+  if(!input_) {
+    return input_ as any;
+  }return input_
 }export function jsonCreateEventTypeRequestToTransportTransform(
   input_?: CreateEventTypeRequest | null,
 ): any {
@@ -115,7 +128,7 @@ export function decodeBase64(value: string): Uint8Array | undefined {
     return input_ as any;
   }
     return {
-    title: input_.title,description: input_.description,durationMinutes: input_.durationMinutes
+    title: input_.title,description: input_.description,durationMinutes: jsonDurationMinutesToTransportTransform(input_.durationMinutes)
   }!;
 }export function jsonCreateEventTypeRequestToApplicationTransform(
   input_?: any,
@@ -124,7 +137,7 @@ export function decodeBase64(value: string): Uint8Array | undefined {
     return input_ as any;
   }
     return {
-    title: input_.title,description: input_.description,durationMinutes: input_.durationMinutes
+    title: input_.title,description: input_.description,durationMinutes: jsonDurationMinutesToApplicationTransform(input_.durationMinutes)
   }!;
 }export function jsonApiErrorToTransportTransform(
   input_?: ApiError | null,

@@ -6,8 +6,30 @@ export interface EventType {
   id: string;
   title: string;
   description: string;
-  durationMinutes: number;
+  durationMinutes: DurationMinutes;
   createdAt: string;
+}
+export type Uuid = string;
+/**
+ * Meeting length in minutes: 30–120, a multiple of 30.
+ */
+export type DurationMinutes = 30 | 60 | 90 | 120;
+export type UtcDateTime = string;
+/**
+ * String fields are trimmed; length limits apply to the trimmed value.
+ */
+export interface CreateEventTypeRequest {
+  title: string;
+  description: string;
+  durationMinutes: DurationMinutes;
+}
+/**
+ * Every 4xx response uses this shape.
+ * VALIDATION_ERROR covers schema violations and malformed requests (invalid JSON, unsupported content type).
+ */
+export interface ApiError {
+  code: "VALIDATION_ERROR" | "NOT_FOUND" | "SLOT_CONFLICT";
+  message: string;
 }
 /**
  * A 32-bit integer. (`-2,147,483,648` to `2,147,483,647`)
@@ -26,16 +48,6 @@ export type Integer = number;
  * A numeric type
  */
 export type Numeric = number;
-export type UtcDateTime = string;
-export interface CreateEventTypeRequest {
-  title: string;
-  description: string;
-  durationMinutes: number;
-}
-export interface ApiError {
-  code: "VALIDATION_ERROR" | "NOT_FOUND" | "SLOT_CONFLICT";
-  message: string;
-}
 export interface Slot {
   startAt: string;
   endAt: string;
@@ -50,8 +62,14 @@ export interface Booking {
   guestEmail: string;
   createdAt: string;
 }
+/**
+ * String fields are trimmed; length limits apply to the trimmed value.
+ */
 export interface CreateBookingRequest {
   eventTypeId: string;
+  /**
+   * Must equal the startAt of a slot returned by the slots endpoint; otherwise 409 SLOT_CONFLICT.
+   */
   startAt: string;
   guestName: string;
   guestEmail: string;

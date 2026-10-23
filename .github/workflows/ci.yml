@@ -25,3 +25,23 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      - name: Generated artifacts are up to date
+        run: git diff --exit-code -- docs/openapi src/api/generated server/generated
+
+  e2e:
+    # Playwright 1.55 ships browser dependencies only for Ubuntu 24.04 and older.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/

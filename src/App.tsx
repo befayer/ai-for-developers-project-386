@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { api, ApiClientError, unwrap } from './api/client'
-import type { Booking, EventType, Slot } from './api/generated'
+import type { Booking, DurationMinutes, EventType, Slot } from './api/generated'
+import { schemas } from './api/generated/schemas'
+
+const eventTypeFields = schemas.CreateEventTypeRequest.properties
+const bookingFields = schemas.CreateBookingRequest.properties
 
 type View = 'home' | 'booking' | 'owner' | 'success'
 
@@ -266,9 +270,8 @@ function BookingForm({ eventType, slot, onConfirmed }: { eventType: EventType; s
       <div className="chosen-slot">{dateFormatter.format(new Date(slot.startAt))}, {timeFormatter.format(new Date(slot.startAt))}</div>
       {error && <div className="alert error-alert">{error}</div>}
       <form className="booking-form" onSubmit={submit}>
-        <label>Ваше имя<input name="name" required minLength={2} autoComplete="name" placeholder="Александр" /></label>
-        <label>Электронная почта<input name="email" required type="email" autoComplete="email" placeholder="name@example.com" /></label>
-        <label>Комментарий <span className="optional">необязательно</span><textarea name="note" rows={4} placeholder="Что важно знать перед встречей?" /></label>
+        <label>Ваше имя<input name="name" required minLength={bookingFields.guestName.minLength} maxLength={bookingFields.guestName.maxLength} autoComplete="name" placeholder="Александр" /></label>
+        <label>Электронная почта<input name="email" required type="email" maxLength={bookingFields.guestEmail.maxLength} autoComplete="email" placeholder="name@example.com" /></label>
         <button className="primary-button" disabled={submitting}>{submitting ? 'Бронируем…' : 'Подтвердить встречу'}</button>
         <small className="privacy-note">Нажимая кнопку, вы соглашаетесь на обработку данных для организации встречи.</small>
       </form>
@@ -318,7 +321,7 @@ function OwnerPage({ eventTypes, onEventTypeCreated }: { eventTypes: EventType[]
       unwrap(await api.eventTypesClient.create({
         title: String(form.get('title')),
         description: String(form.get('description')),
-        durationMinutes: Number(form.get('duration')),
+        durationMinutes: Number(form.get('duration')) as DurationMinutes,
       }))
       formElement.reset()
       setMessage('Тип встречи создан и уже доступен гостям.')
@@ -346,9 +349,9 @@ function OwnerPage({ eventTypes, onEventTypeCreated }: { eventTypes: EventType[]
         <aside className="owner-sidebar">
           <h2>Новый тип встречи</h2>
           <form onSubmit={createType} className="compact-form">
-            <label>Название<input name="title" required minLength={2} placeholder="Разбор проекта" /></label>
-            <label>Описание<textarea name="description" required minLength={5} rows={3} placeholder="О чём будет встреча" /></label>
-            <label>Длительность<select name="duration" defaultValue="30"><option value="30">30 минут</option><option value="60">60 минут</option><option value="90">90 минут</option><option value="120">120 минут</option></select></label>
+            <label>Название<input name="title" required minLength={eventTypeFields.title.minLength} maxLength={eventTypeFields.title.maxLength} placeholder="Разбор проекта" /></label>
+            <label>Описание<textarea name="description" required minLength={eventTypeFields.description.minLength} maxLength={eventTypeFields.description.maxLength} rows={3} placeholder="О чём будет встреча" /></label>
+            <label>Длительность<select name="duration" defaultValue={eventTypeFields.durationMinutes.enum[0]}>{eventTypeFields.durationMinutes.enum.map((minutes) => <option key={minutes} value={minutes}>{minutes} минут</option>)}</select></label>
             <button className="primary-button">Создать</button>
           </form>
           {message && <div className="alert success-alert">{message}</div>}
