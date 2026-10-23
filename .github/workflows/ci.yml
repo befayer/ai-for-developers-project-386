@@ -29,7 +29,8 @@ jobs:
         run: git diff --exit-code -- docs/openapi src/api/generated server/generated
 
   e2e:
-    runs-on: ubuntu-latest
+    # Playwright 1.55 ships browser dependencies only for Ubuntu 24.04 and older.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
