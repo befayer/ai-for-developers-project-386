@@ -110,9 +110,12 @@ paths:
         - name: days
           in: query
           required: false
+          description: Booking window in days starting today; defaults to 14.
           schema:
             type: integer
             format: int32
+            minimum: 1
+            maximum: 14
           explode: false
       responses:
         '200':
@@ -123,6 +126,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Slot'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
           description: The server cannot find the requested resource.
           content:
@@ -167,6 +176,9 @@ components:
             - SLOT_CONFLICT
         message:
           type: string
+      description: |-
+        Every 4xx response uses this shape.
+        VALIDATION_ERROR covers schema violations and malformed requests (invalid JSON, unsupported content type).
     Booking:
       type: object
       required:
@@ -180,9 +192,9 @@ components:
         - createdAt
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/Uuid'
         eventTypeId:
-          type: string
+          $ref: '#/components/schemas/Uuid'
         eventTitle:
           type: string
         startAt:
@@ -204,15 +216,20 @@ components:
         - guestEmail
       properties:
         eventTypeId:
-          type: string
+          $ref: '#/components/schemas/Uuid'
         startAt:
-          $ref: '#/components/schemas/UtcDateTime'
+          allOf:
+            - $ref: '#/components/schemas/UtcDateTime'
+          description: Must equal the startAt of a slot returned by the slots endpoint; otherwise 409 SLOT_CONFLICT.
         guestName:
           type: string
           minLength: 2
+          maxLength: 80
         guestEmail:
           type: string
+          maxLength: 160
           format: email
+      description: String fields are trimmed; length limits apply to the trimmed value.
     CreateEventTypeRequest:
       type: object
       required:
@@ -223,14 +240,22 @@ components:
         title:
           type: string
           minLength: 2
+          maxLength: 80
         description:
           type: string
           minLength: 5
+          maxLength: 500
         durationMinutes:
-          type: integer
-          format: int32
-          minimum: 30
-          maximum: 120
+          $ref: '#/components/schemas/DurationMinutes'
+      description: String fields are trimmed; length limits apply to the trimmed value.
+    DurationMinutes:
+      type: number
+      enum:
+        - 30
+        - 60
+        - 90
+        - 120
+      description: 'Meeting length in minutes: 30–120, a multiple of 30.'
     EventType:
       type: object
       required:
@@ -241,15 +266,13 @@ components:
         - createdAt
       properties:
         id:
-          type: string
+          $ref: '#/components/schemas/Uuid'
         title:
           type: string
         description:
           type: string
         durationMinutes:
-          type: integer
-          format: int32
-          minimum: 30
+          $ref: '#/components/schemas/DurationMinutes'
         createdAt:
           $ref: '#/components/schemas/UtcDateTime'
     Slot:
@@ -265,6 +288,9 @@ components:
     UtcDateTime:
       type: string
       format: date-time
+    Uuid:
+      type: string
+      format: uuid
 servers:
   - url: http://localhost:3000
     description: Local development

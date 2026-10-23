@@ -1,4 +1,5 @@
-import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { parse } from 'yaml'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -38,3 +39,43 @@ const serverTypes = spawnSync(executable('openapi-typescript'), [openApiTarget, 
 })
 if (serverTypes.status !== 0) process.exit(serverTypes.status ?? 1)
 
+
+// Request validation schemas: the server and the forms use exactly what the contract declares.
+const openApi = parse(await readFile(openApiTarget, 'utf8'))
+const resolve = (node) => {
+  if (Array.isArray(node)) return node.map(resolve)
+  if (!node || typeof node !== 'object') return node
+  if (typeof node.$ref === 'string') {
+    const target = node.$ref.replace('#/', '').split('/').reduce((value, key) => value[key], openApi)
+    return resolve(target)
+  }
+  return Object.fromEntries(Object.entries(node).map(([key, value]) => [key, resolve(value)]))
+}
+
+const requestSchemas = {}
+for (const [path, item] of Object.entries(openApi.paths)) {
+  for (const [method, operation] of Object.entries(item)) {
+    const parts = {}
+    const body = operation.requestBody?.content?.['application/json']?.schema
+    if (body) parts.body = resolve(body)
+    for (const location of ['path', 'query']) {
+      const parameters = (operation.parameters ?? []).map(resolve).filter((parameter) => parameter.in === location)
+      if (parameters.length === 0) continue
+      parts[location === 'path' ? 'params' : 'querystring'] = {
+        type: 'object',
+        required: parameters.filter((parameter) => parameter.required).map((parameter) => parameter.name),
+        properties: Object.fromEntries(parameters.map((parameter) => [parameter.name, parameter.schema])),
+      }
+    }
+    requestSchemas[operation.operationId] = { method: method.toUpperCase(), path, ...parts }
+  }
+}
+
+const schemasModule = `// Generated from docs/openapi/openapi.yaml by \`npm run api:generate\`. Do not edit manually.
+
+export const schemas = ${JSON.stringify(resolve(openApi.components.schemas), null, 2)} as const
+
+export const requestSchemas = ${JSON.stringify(requestSchemas, null, 2)} as const
+`
+await writeFile(join(root, 'server', 'generated', 'schemas.ts'), schemasModule)
+await writeFile(join(clientTarget, 'schemas.ts'), schemasModule)

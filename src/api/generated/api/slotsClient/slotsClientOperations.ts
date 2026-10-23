@@ -32,6 +32,9 @@ export async function list(
   if (+response.status === 200 && response.headers["content-type"]?.includes("application/json")) {
     return jsonArraySlotToApplicationTransform(response.body)!;
   }
+  if (+response.status === 400 && response.headers["content-type"]?.includes("application/json")) {
+    return jsonApiErrorToApplicationTransform(response.body)!;
+  }
   if (+response.status === 404 && response.headers["content-type"]?.includes("application/json")) {
     return jsonApiErrorToApplicationTransform(response.body)!;
   }

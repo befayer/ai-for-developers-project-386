@@ -23,9 +23,9 @@
 ## Стек
 
 - React 18, TypeScript, Vite;
-- Fastify 5, SQLite (`better-sqlite3`), Zod;
+- Fastify 5 (валидация по JSON Schema из контракта), SQLite (`better-sqlite3`);
 - TypeSpec, OpenAPI, TypeSpec HTTP Client;
-- Vitest, ESLint;
+- Vitest, Playwright, ESLint;
 - Docker и GitHub Actions.
 
 ## Требования
@@ -81,7 +81,8 @@ docker run --rm -p 4100:4100 -e PORT=4100 -e DATABASE_PATH=/app/data/calendar.db
 | `npm run api:generate` | Генерирует OpenAPI, SDK и серверные типы из TypeSpec |
 | `npm run lint` | Проверяет стиль и потенциальные ошибки |
 | `npm run typecheck` | Проверяет типы фронтенда и сервера |
-| `npm test` | Запускает интеграционные тесты API |
+| `npm test` | Запускает интеграционные и граничные тесты API |
+| `npm run test:e2e` | Собирает приложение и проходит сценарии в браузере (Playwright) |
 | `npm run build` | Создаёт production-сборку |
 | `npm start` | Запускает собранное приложение |
 
@@ -91,7 +92,8 @@ docker run --rm -p 4100:4100 -e PORT=4100 -e DATABASE_PATH=/app/data/calendar.db
 
 - [`docs/openapi/openapi.yaml`](docs/openapi/openapi.yaml) — OpenAPI;
 - `src/api/generated/` — клиентский SDK, используемый React-приложением;
-- `server/generated/api-types.ts` — типы для серверной реализации.
+- `server/generated/api-types.ts` — типы для серверной реализации;
+- `server/generated/schemas.ts` — JSON Schema запросов, по которым Fastify валидирует входные данные (та же схема задаёт лимиты форм).
 
 | Метод | Путь | Назначение |
 |---|---|---|
@@ -112,6 +114,6 @@ docker run --rm -p 4100:4100 -e PORT=4100 -e DATABASE_PATH=/app/data/calendar.db
 
 ## Проверяемые сценарии
 
-Интеграционные тесты подтверждают запуск и health endpoint, получение типов и слотов, бронирование, появление встречи у организатора, серверный HTTP 409 при повторной записи через другой тип встречи и создание нового типа встречи.
+Интеграционные тесты подтверждают запуск и health endpoint, получение типов и слотов, бронирование, появление встречи у организатора, серверный HTTP 409 при повторной записи через другой тип встречи и создание нового типа встречи, границы всех ограничений контракта и ответы на некорректный JSON. Playwright-тесты проходят запись через интерфейс, сообщение о конфликте и форму организатора.
 
 Учебный проект программы [«AI для разработчиков»](https://ru.hexlet.io/programs/ai-for-developers).

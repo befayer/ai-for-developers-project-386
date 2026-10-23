@@ -27,12 +27,32 @@
 
 - `docs/openapi/openapi.yaml`;
 - `src/api/generated/` — типизированный SDK браузера;
-- `server/generated/api-types.ts` — серверные типы.
+- `server/generated/api-types.ts` — серверные типы;
+- `server/generated/schemas.ts` и `src/api/generated/schemas.ts` — JSON Schema запросов для валидации на сервере и в формах.
+
+## Ограничения входных данных
+
+Источник правды — `api/main.tsp`; сервер валидирует запросы сгенерированными JSON Schema (`server/generated/schemas.ts`), формы берут лимиты из той же схемы.
+
+| Поле | Тип | Обязательно | Ограничения | Ошибка |
+|---|---|---|---|---|
+| `CreateEventTypeRequest.title` | string | да | 2–80 символов после trim | 400 `VALIDATION_ERROR` |
+| `CreateEventTypeRequest.description` | string | да | 5–500 символов после trim | 400 `VALIDATION_ERROR` |
+| `CreateEventTypeRequest.durationMinutes` | integer | да | одно из 30, 60, 90, 120 | 400 `VALIDATION_ERROR` |
+| `CreateBookingRequest.eventTypeId` | string | да | UUID; неизвестный id → 404 | 400 / 404 `NOT_FOUND` |
+| `CreateBookingRequest.startAt` | string | да | `date-time`; должен совпадать со свободным слотом | 400 / 409 `SLOT_CONFLICT` |
+| `CreateBookingRequest.guestName` | string | да | 2–80 символов после trim | 400 `VALIDATION_ERROR` |
+| `CreateBookingRequest.guestEmail` | string | да | `email`, до 160 символов | 400 `VALIDATION_ERROR` |
+| `days` (query слотов) | integer | нет | 1–14, по умолчанию 14 | 400 `VALIDATION_ERROR` |
+
+Некорректный JSON, пустое тело и неподдерживаемый `Content-Type` возвращают 400 `VALIDATION_ERROR` в формате `ApiError`.
 
 ## Проверка
 
 - Интеграционный тест проходит полный сценарий API: тип → слот → бронь → список организатора.
 - Отдельный тест отправляет повторную бронь того же времени через другой тип и ожидает HTTP 409.
 - Smoke-тест проверяет `/api/v1/health` и наличие начальных типов встреч.
-- CI запускает линтер, проверку типов, тесты и production-сборку на Node.js 22 и 24.
+- Граничные тесты: последнее допустимое и первое недопустимое значение каждого ограничения (название 80/81, длительность 30/45/60 и т.д.) и некорректный JSON.
+- Playwright проходит сценарий через интерфейс: тип → слот → форма → подтверждение → список организатора, а также сообщение о конфликте и форму организатора.
+- CI запускает линтер, проверку типов, тесты, production-сборку на Node.js 22 и 24, проверку актуальности сгенерированных файлов и e2e-тесты.
 

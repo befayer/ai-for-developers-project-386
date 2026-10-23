@@ -10,7 +10,7 @@ type EventTypeRow = {
   id: string
   title: string
   description: string
-  duration_minutes: number
+  duration_minutes: EventType['durationMinutes']
   created_at: string
 }
 
