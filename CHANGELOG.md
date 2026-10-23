@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/befayer/ai-for-developers-project-386/compare/call-calendar-v1.2.0...call-calendar-v1.2.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **api:** validate requests with schemas generated from TypeSpec ([#13](https://github.com/befayer/ai-for-developers-project-386/issues/13)) ([0fdc415](https://github.com/befayer/ai-for-developers-project-386/commit/0fdc415f33ad175578eb96c85398b942d82ff909))
+
 ## [1.2.0](https://github.com/befayer/ai-for-developers-project-386/compare/call-calendar-v1.1.0...call-calendar-v1.2.0) (2026-10-05)
 
 
